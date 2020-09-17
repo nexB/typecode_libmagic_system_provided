@@ -28,48 +28,45 @@ from __future__ import unicode_literals
 from os import path
 import platform
 
-from plugincode.location_provider import LocationProviderPlugin
 
+def get_locations():
+    """
+    Return a mapping of {location key: location} providing the installation
+    locations of the libmagic shared library as installed on various Linux
+    distros or on FreeBSD.
+    """
+    system_arch = platform.machine()
+    mainstream_system = platform.system().lower()
+    if mainstream_system == 'linux':
+        distribution = platform.linux_distribution()[0].lower()
+        debian_based_distro = ['ubuntu', 'mint', 'debian']
+        rpm_based_distro = ['fedora', 'redhat']
 
-class LibmagicPaths(LocationProviderPlugin):
-    def get_locations(self):
-        """
-        Return a mapping of {location key: location} providing the installation
-        locations of the libmagic shared library as installed on various Linux
-        distros or on FreeBSD.
-        """
-        system_arch = platform.machine()
-        mainstream_system = platform.system().lower()
-        if mainstream_system == 'linux':
-            distribution = platform.linux_distribution()[0].lower()
-            debian_based_distro = ['ubuntu', 'mint', 'debian']
-            rpm_based_distro = ['fedora', 'redhat']
+        if distribution in debian_based_distro:
+            data_dir = '/usr/lib/file'
+            lib_dir = '/usr/lib/'+system_arch+'-linux-gnu'
 
-            if distribution in debian_based_distro:
-                data_dir = '/usr/lib/file'
-                lib_dir = '/usr/lib/'+system_arch+'-linux-gnu'
+        elif distribution in rpm_based_distro:
+            data_dir = '/usr/share/misc'
+            lib_dir = '/usr/lib64'
 
-            elif distribution in rpm_based_distro:
-                data_dir = '/usr/share/misc'
-                lib_dir = '/usr/lib64'
+        else:
+            raise Exception('Unsupported system: {}'.format(distribution))
 
-            else:
-                raise Exception('Unsupported system: {}'.format(distribution))
+        lib_dll = path.join(lib_dir, 'libmagic.so');
 
-            lib_dll = path.join(lib_dir, 'libmagic.so');
+    elif mainstream_system == 'freebsd':
+        if path.isdir('/usr/local/'):
+            lib_dir = '/usr/local'
+        else:
+            lib_dir = '/usr'
 
-        elif mainstream_system == 'freebsd':
-            if path.isdir('/usr/local/'):
-                lib_dir = '/usr/local'
-            else:
-                lib_dir = '/usr'
+        lib_dll = path.join(lib_dir, 'lib/libmagic.so')
+        data_dir = path.join(lib_dir,'share/file')
 
-            lib_dll = path.join(lib_dir, 'lib/libmagic.so')
-            data_dir = path.join(lib_dir,'share/file')
-
-        locations = {
-            'typecode.libmagic.libdir': lib_dir,
-            'typecode.libmagic.dll': lib_dll,
-            'typecode.libmagic.db': path.join(data_dir, 'magic.mgc'),
-            }
-        return locations
+    locations = {
+        'typecode.libmagic.libdir': lib_dir,
+        'typecode.libmagic.dll': lib_dll,
+        'typecode.libmagic.db': path.join(data_dir, 'magic.mgc'),
+        }
+    return locations
