@@ -45,15 +45,15 @@ def get_locations():
         if distribution in debian_based_distro:
             data_dir = '/usr/lib/file'
             lib_dir = '/usr/lib/'+system_arch+'-linux-gnu'
+            lib_dll = path.join(lib_dir, 'libmagic.so');
 
         elif distribution in rpm_based_distro:
             data_dir = '/usr/share/misc'
             lib_dir = '/usr/lib64'
+            lib_dll = path.join(lib_dir, 'libmagic.so.1.0.0');
 
         else:
             raise Exception('Unsupported system: {}'.format(distribution))
-
-        lib_dll = path.join(lib_dir, 'libmagic.so');
 
     elif mainstream_system == 'freebsd':
         if path.isdir('/usr/local/'):
