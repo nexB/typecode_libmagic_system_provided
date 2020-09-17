@@ -40,7 +40,7 @@ def get_locations():
     if mainstream_system == 'linux':
         distribution = platform.linux_distribution()[0].lower()
         debian_based_distro = ['ubuntu', 'mint', 'debian']
-        rpm_based_distro = ['fedora', 'redhat']
+        rpm_based_distro = ['fedora', 'redhat', 'centos linux']
 
         if distribution in debian_based_distro:
             data_dir = '/usr/lib/file'
