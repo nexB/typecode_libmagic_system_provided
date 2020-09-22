@@ -25,7 +25,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from os import path
+import ctypes.util
+import os
 import platform
 
 from plugincode.location_provider import LocationProviderPlugin
@@ -43,33 +44,37 @@ class LibmagicPaths(LocationProviderPlugin):
         if mainstream_system == 'linux':
             distribution = platform.linux_distribution()[0].lower()
             debian_based_distro = ['ubuntu', 'mint', 'debian']
-            rpm_based_distro = ['fedora', 'redhat']
+            rpm_based_distro = ['fedora', 'redhat', 'centos linux']
 
             if distribution in debian_based_distro:
                 data_dir = '/usr/lib/file'
                 lib_dir = '/usr/lib/'+system_arch+'-linux-gnu'
-
             elif distribution in rpm_based_distro:
                 data_dir = '/usr/share/misc'
                 lib_dir = '/usr/lib64'
-
             else:
                 raise Exception('Unsupported system: {}'.format(distribution))
 
-            lib_dll = path.join(lib_dir, 'libmagic.so');
+            lib_dll = os.path.join(lib_dir, 'libmagic.so.1.0.0')
 
         elif mainstream_system == 'freebsd':
-            if path.isdir('/usr/local/'):
+            if os.path.isdir('/usr/local/'):
                 lib_dir = '/usr/local'
             else:
                 lib_dir = '/usr'
+            lib_dll = os.path.join(lib_dir, 'lib/libmagic.so')
+            data_dir = os.path.join(lib_dir,'share/file')
 
-            lib_dll = path.join(lib_dir, 'lib/libmagic.so')
-            data_dir = path.join(lib_dir,'share/file')
+        else:
+            raise Exception('Unsupported system: {}'.format(mainstream_system))
 
-        locations = {
+        if not os.path.exists(lib_dll):
+            lib_dll = ctypes.util.find_library('magic')
+            if not lib_dll:
+                raise Exception(('libmagic.so was not found on the system'))
+
+        return {
             'typecode.libmagic.libdir': lib_dir,
             'typecode.libmagic.dll': lib_dll,
-            'typecode.libmagic.db': path.join(data_dir, 'magic.mgc'),
-            }
-        return locations
+            'typecode.libmagic.db': os.path.join(data_dir, 'magic.mgc'),
+        }
