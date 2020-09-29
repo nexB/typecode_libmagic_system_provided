@@ -25,11 +25,49 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import ctypes
 import ctypes.util
 import os
 import platform
 
 from plugincode.location_provider import LocationProviderPlugin
+
+
+# Modified from https://stackoverflow.com/questions/22579308/getting-the-fullpath-of-a-library-using-ctypes-util-find-library-in-python
+class dl_phdr_info(ctypes.Structure):
+    _fields_ = [
+        ('padding0', ctypes.c_void_p),
+        ('dlpi_name', ctypes.c_char_p),
+    ]
+
+
+callback_t = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.POINTER(dl_phdr_info),
+    ctypes.POINTER(ctypes.c_size_t),
+    ctypes.c_char_p
+)
+# Load library, set argument value types and return value type
+dl_iterate_phdr = ctypes.CDLL('libc.so.6').dl_iterate_phdr
+dl_iterate_phdr.argtypes = [callback_t, ctypes.c_char_p]
+dl_iterate_phdr.restype = ctypes.c_char_p
+
+
+class CallbackWrapper(object):
+    """
+    This class is a "wrapper" for the callback function from the answer to
+    https://stackoverflow.com/questions/22579308/getting-the-fullpath-of-a-library-using-ctypes-util-find-library-in-python
+
+    The callback method is placed in this class so we can save the .so path from
+    the function call to dl_iterate_phdr into our class attribute `dll_path`
+    """
+    def __init__(self):
+        self.dll_path = ''
+
+    def callback(self, info, size, data):
+        if data in info.contents.dlpi_name:
+            self.dll_path = info.contents.dlpi_name
+        return 0
 
 
 class LibmagicPaths(LocationProviderPlugin):
@@ -71,7 +109,13 @@ class LibmagicPaths(LocationProviderPlugin):
         if not os.path.exists(lib_dll):
             lib_dll = ctypes.util.find_library('magic')
             if not lib_dll:
-                raise Exception(('libmagic.so was not found on the system'))
+                raise Exception('libmagic.so was not found on the system')
+            # Load library
+            _ = ctypes.CDLL(lib_dll)
+            # Find loaded library
+            c = CallbackWrapper()
+            _ = dl_iterate_phdr(callback_t(c.callback), bytes(lib_dll.encode('utf-8')))
+            lib_dll = c.dll_path
 
         return {
             'typecode.libmagic.libdir': lib_dir,
