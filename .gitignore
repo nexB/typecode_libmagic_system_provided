@@ -67,4 +67,3 @@ pyvenv.cfg
 /.pytest_cache/
 lib64
 tcl
-/.env
