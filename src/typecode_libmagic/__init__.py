@@ -117,8 +117,12 @@ class LibmagicPaths(LocationProviderPlugin):
             _ = dl_iterate_phdr(callback_t(c.callback), bytes(lib_dll.encode('utf-8')))
             lib_dll = c.dll_path
 
+        magic_mgc_path = os.path.join(data_dir, 'magic.mgc')
+        if not magic_mgc_path:
+            raise Exception('magic.mgc was not found on the system')
+
         return {
             'typecode.libmagic.libdir': lib_dir,
             'typecode.libmagic.dll': lib_dll,
-            'typecode.libmagic.db': os.path.join(data_dir, 'magic.mgc'),
+            'typecode.libmagic.db': magic_mgc_path,
         }
