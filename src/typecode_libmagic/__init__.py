@@ -118,7 +118,7 @@ class LibmagicPaths(LocationProviderPlugin):
             lib_dll = c.dll_path
 
         magic_mgc_path = os.path.join(data_dir, 'magic.mgc')
-        if not magic_mgc_path:
+        if not os.path.exists(magic_mgc_path):
             raise Exception('magic.mgc was not found on the system')
 
         return {
