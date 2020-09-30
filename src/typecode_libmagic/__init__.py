@@ -27,6 +27,7 @@ from __future__ import unicode_literals
 
 import ctypes
 import ctypes.util
+import distro
 import os
 import platform
 
@@ -80,7 +81,7 @@ class LibmagicPaths(LocationProviderPlugin):
         system_arch = platform.machine()
         mainstream_system = platform.system().lower()
         if mainstream_system == 'linux':
-            distribution = platform.linux_distribution()[0].lower()
+            distribution = distro.linux_distribution()[0].lower()
             debian_based_distro = ['ubuntu', 'mint', 'debian']
             rpm_based_distro = ['fedora', 'redhat', 'centos linux']
 
